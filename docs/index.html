@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>AU CTI Dashboard — CYB815 Group 14</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+    <div class="app">
+
+        <!-- ══ TOPBAR ══════════════════════════════════════════════ -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="aahe-tag">AAHE</div>
+                <div class="logo">
+                    <div class="logo-badge">AU</div>
+                    <div>
+                        <div class="logo-name">Australia Cyber Threat Intelligence Dashboard</div>
+                        <div class="logo-sub">CYB815 Cybersecurity Capstone &nbsp;·&nbsp;
+                            <span style="color:#ffc800;font-weight:700">Group 14</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="fw-pills">
+                    <span class="fw-pill fp-mitre">MITRE ATT&CK</span>
+                    <span class="fw-pill fp-nist">NIST CSF</span>
+                    <span class="fw-pill fp-cvss">CVSS v3.1</span>
+                    <span class="fw-pill fp-asd">ASD Essential 8</span>
+                    <span class="fw-pill fp-iso">ISO 27001</span>
+                </div>
+                <!-- Project Brief Requirements — moved to topbar -->
+                <div class="brief-pills" id="briefTopbar"></div>
+            </div>
+            <div class="topbar-right">
+                <div class="clock-line1" id="auClock">—</div>
+                <div class="clock-line2" id="utcClock">—</div>
+                <div class="clock-line3" id="lastUpdated">—</div>
+            </div>
+        </div>
+
+        <div class="body">
+
+            <!-- ══ SIDEBAR — VSCode style ════════════════════════ -->
+            <div class="sidebar">
+                <div class="nav-sec">Dashboard</div>
+                <div class="nav-link active" onclick="showTab('overview',this)" data-label="Overview">
+                    <span class="nav-ic">⬡</span>
+                    <span class="nav-label">Overview</span>
+                </div>
+                <div class="nav-link" onclick="showTab('feed',this)" data-label="Threat Intel Feed">
+                    <span class="nav-ic">⬢</span>
+                    <span class="nav-label">Threat Intel Feed</span>
+                </div>
+                <div class="nav-sec">Analysis</div>
+                <div class="nav-link" onclick="showTab('analytics',this)" data-label="Analytics">
+                    <span class="nav-ic">⬣</span>
+                    <span class="nav-label">Analytics</span>
+                </div>
+                <div class="nav-link" onclick="showTab('risk',this)" data-label="Risk & CVSS">
+                    <span class="nav-ic">⬤</span>
+                    <span class="nav-label">Risk & CVSS</span>
+                </div>
+                <div class="nav-div"></div>
+                <div class="nav-link" onclick="showTab('ir',this)" data-label="IR & Mitigation">
+                    <span class="nav-ic">⬥</span>
+                    <span class="nav-label">IR & Mitigation</span>
+                </div>
+                <div class="nav-div"></div>
+                <div class="sidebar-feeds-title">Feed Status</div>
+                <div id="sidebarFeeds"></div>
+            </div>
+
+            <!-- ══ CONTENT ════════════════════════════════════════ -->
+            <div class="content">
+
+                <!-- ══════════════════════════
+                 TAB 1: OVERVIEW
+            ══════════════════════════ -->
+                <div class="tab-pane active" id="tab-overview">
+
+                    <!-- ── ROW 1: Date Filter (compact single line) ── -->
+                    <div class="dfilter dfilter-compact">
+                        <span class="dfilter-label">DATE</span>
+                        <div class="dfilter-presets">
+                            <button class="dbtn active" id="btn-all" onclick="setPreset('all')">All Time</button>
+                            <button class="dbtn" id="btn-7days" onclick="setPreset('7days')">Last 7 Days</button>
+                            <button class="dbtn" id="btn-30days" onclick="setPreset('30days')">Last 30 Days</button>
+                            <button class="dbtn" id="btn-project" onclick="setPreset('project')">Project Period</button>
+                        </div>
+                        <div class="dfilter-sep"></div>
+                        <input type="date" id="fromDate" class="dinput" />
+                        <span class="dfilter-to">→</span>
+                        <input type="date" id="toDate" class="dinput" />
+                        <button class="dbtn-apply" id="btn-apply-date" onclick="applyActiveDateFilter()">Apply</button>
+                        <button class="dbtn-clear" onclick="clearDateFilter()">Clear</button>
+                        <span id="dateInfo" class="dfilter-count" style="margin-left:auto"></span>
+                    </div>
+
+                    <!-- ── ROW 2: KPI Cards (compact) ── -->
+                    <div class="r6 mb-sm">
+                        <div class="kpi kpi-sm kk-blue">
+                            <div class="kl">Total IOCs</div>
+                            <div class="kv kv-sm" id="kpiTotal">—</div>
+                            <div class="ks">collected</div>
+                        </div>
+                        <div class="kpi kpi-sm kk-red">
+                            <div class="kl">Critical</div>
+                            <div class="kv kv-sm cr" id="kpiCritical">—</div>
+                            <div class="ks">act now</div>
+                        </div>
+                        <div class="kpi kpi-sm kk-orange">
+                            <div class="kl">High</div>
+                            <div class="kv kv-sm co" id="kpiHigh">—</div>
+                            <div class="ks">investigate</div>
+                        </div>
+                        <div class="kpi kpi-sm kk-yellow">
+                            <div class="kl">Avg CVSS</div>
+                            <div class="kv kv-sm cy" id="kpiCvss">—</div>
+                            <div class="ks">/ 10.0</div>
+                        </div>
+                        <div class="kpi kpi-sm kk-cyan">
+                            <div class="kl">Phishing</div>
+                            <div class="kv kv-sm cc" id="kpiPhishing">—</div>
+                            <div class="ks">campaigns</div>
+                        </div>
+                        <div class="kpi kpi-sm kk-purple">
+                            <div class="kl">Suspicious</div>
+                            <div class="kv kv-sm cp" id="kpiSuspicious">—</div>
+                            <div class="ks">network threats</div>
+                        </div>
+                    </div>
+
+                    <!-- ── ROW 3: Main grid — Map left, right column ── -->
+                    <div class="ov-main-grid">
+
+                        <!-- LEFT: Map (tall, takes most space) -->
+                        <div class="ov-left">
+                            <div class="card" style="padding:0;overflow:hidden;height:100%">
+                                <div
+                                    style="padding:9px 13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
+                                    <div class="ct" style="font-size:11px">🗺 Australia Threat Map</div>
+                                    <span class="sl" id="mapCount"></span>
+                                </div>
+                                <div id="auMap" style="height:calc(100% - 36px)"></div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: stacked panels -->
+                        <div class="ov-right">
+
+                            <!-- Timeline -->
+                            <div class="card mb-sm">
+                                <div class="ch ch-sm">
+                                    <div class="ct" style="font-size:11px">IOC Timeline
+                                        <span class="cs">— from 13 Apr 2026</span>
+                                    </div>
+                                </div>
+                                <div style="height:150px;position:relative">
+                                    <canvas id="timelineChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Attack Categories — full width, taller -->
+                            <div class="card mb-sm">
+                                <div class="ch ch-sm">
+                                    <div class="ct" style="font-size:11px">Attack Categories
+                                        <span class="cs">— by threat type</span>
+                                    </div>
+                                </div>
+                                <div style="height:170px;position:relative">
+                                    <canvas id="ovCatChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Recent runs + Additional -->
+                            <div class="card">
+                                <div class="ch ch-sm">
+                                    <div class="ct" style="font-size:11px">Recent Collection Runs</div>
+                                </div>
+                                <div id="fetchRuns"></div>
+                                <div style="margin-top:10px">
+                                    <div class="ct" style="font-size:10px;margin-bottom:6px;color:var(--text3)">
+                                        Additional Threats Detected</div>
+                                    <div id="additionalCats"></div>
+                                </div>
+                            </div>
+
+                        </div><!-- end ov-right -->
+                    </div><!-- end ov-main-grid -->
+
+                </div><!-- end tab-overview -->
+
+                <!-- ══════════════════════════
+                 TAB 2: THREAT INTEL FEED
+            ══════════════════════════ -->
+                <div class="tab-pane" id="tab-feed">
+
+                    <!-- Redesigned Filter Bar -->
+                    <div class="filter-bar mb" id="feedFilterBar">
+
+                        <!-- Row 1: Search + action buttons -->
+                        <div class="fbar-row1">
+                            <div class="fbar-search-wrap">
+                                <span class="fbar-search-icon">⌕</span>
+                                <input type="text" id="feedSearch" class="fbar-search"
+                                    placeholder="Search IOC, IP, domain, CVE, category, city..." />
+                                <button class="fbar-search-clear" id="feedSearchClear" title="Clear search">✕</button>
+                            </div>
+                            <div class="fbar-actions">
+                                <button class="fbtn-apply" id="applyFiltersBtn">Apply Filters</button>
+                                <button class="fbtn-clear" id="clearFilters">Reset All</button>
+                                <button class="fbtn-export" onclick="exportCSV()" id="exportBtn">⬇ Export CSV</button>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Severity quick-filter pills -->
+                        <div class="fbar-row2">
+                            <span class="fbar-label">SEVERITY</span>
+                            <button class="fsev-pill fsev-all  active" data-sev="">All</button>
+                            <button class="fsev-pill fsev-crit" data-sev="Critical">● Critical</button>
+                            <button class="fsev-pill fsev-high" data-sev="High">● High</button>
+                            <button class="fsev-pill fsev-med" data-sev="Medium">● Medium</button>
+                            <button class="fsev-pill fsev-low" data-sev="Low">● Low</button>
+                            <div class="fbar-sep"></div>
+                            <span class="fbar-label">QUICK FILTER</span>
+                            <button class="fquick-pill" data-cat="C2 Server">C2 Server</button>
+                            <button class="fquick-pill" data-cat="Phishing">Phishing</button>
+                            <button class="fquick-pill" data-cat="Malware Distribution">Malware</button>
+                            <button class="fquick-pill" data-cat="Brute Force">Brute Force</button>
+                            <button class="fquick-pill" data-cat="Ransomware">Ransomware</button>
+                        </div>
+
+                        <!-- Row 3: Advanced dropdowns (collapsed by default) -->
+                        <div class="fbar-row3">
+                            <span class="fbar-label">ADVANCED</span>
+                            <select id="catFilter" class="fpill-sel">
+                                <option value="">All Categories</option>
+                                <option>Phishing</option>
+                                <option>Malware Distribution</option>
+                                <option>C2 Server</option>
+                                <option>Brute Force</option>
+                                <option>SSH Brute Force</option>
+                                <option>Ransomware</option>
+                                <option>SQL Injection</option>
+                                <option>DDoS Attack</option>
+                                <option>Port Scan</option>
+                                <option>Web App Attack</option>
+                                <option>CVE</option>
+                                <option>Fraud Orders</option>
+                                <option>Suspicious Activity</option>
+                            </select>
+                            <select id="srcFilter" class="fpill-sel">
+                                <option value="">All Sources</option>
+                                <option>AlienVault OTX</option>
+                                <option>AbuseIPDB</option>
+                                <option>URLhaus</option>
+                                <option>Feodo Tracker</option>
+                            </select>
+                            <select id="typeFilter" class="fpill-sel">
+                                <option value="">All Types</option>
+                                <option>Domain</option>
+                                <option>URL</option>
+                                <option>IPv4</option>
+                                <option>FileHash-MD5</option>
+                                <option>CVE</option>
+                            </select>
+                            <select id="cityFilter" class="fpill-sel">
+                                <option value="">All Cities</option>
+                                <option>Sydney</option>
+                                <option>Melbourne</option>
+                                <option>Brisbane</option>
+                                <option>Perth</option>
+                                <option>Adelaide</option>
+                                <option>Canberra</option>
+                                <option>Darwin</option>
+                                <option>Hobart</option>
+                                <option>Gold Coast</option>
+                                <option>Newcastle</option>
+                            </select>
+                            <select id="nistFilter" class="fpill-sel">
+                                <option value="">All NIST</option>
+                                <option>Identify</option>
+                                <option>Protect</option>
+                                <option>Detect</option>
+                                <option>Respond</option>
+                                <option>Recover</option>
+                            </select>
+                            <select id="malwareFilter" class="fpill-sel">
+                                <option value="">All Malware</option>
+                                <option>Botnet</option>
+                                <option>Ransomware</option>
+                                <option>Infostealer</option>
+                                <option>RAT</option>
+                                <option>Trojan</option>
+                            </select>
+                            <select id="mitreFilter" class="fpill-sel">
+                                <option value="">All MITRE</option>
+                                <option>T1566</option>
+                                <option>T1071</option>
+                                <option>T1110</option>
+                                <option>T1204</option>
+                                <option>T1498</option>
+                                <option>T1190</option>
+                                <option>T1486</option>
+                                <option>T1046</option>
+                            </select>
+                        </div>
+
+                        <!-- Row 4: Result count + active filter badges -->
+                        <div class="fbar-row4">
+                            <span id="filterCount" class="fbar-count"></span>
+                            <div id="activeFilterBadges" class="fbar-active-badges"></div>
+                        </div>
+
+                    </div>
+
+                    <div class="card">
+                        <div class="ch">
+                            <div class="ct">Threat Intelligence Feed — Australia
+                                <span class="cs">MITRE · NIST CSF · ASD E8 mapped to every indicator</span>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto">
+                            <table id="iocTable" class="table table-dark table-bordered table-sm" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Severity</th>
+                                        <th>CVSS</th>
+                                        <th>Type</th>
+                                        <th>Indicator</th>
+                                        <th>Category</th>
+                                        <th>MITRE</th>
+                                        <th>NIST</th>
+                                        <th>ASD E8</th>
+                                        <th>Industry</th>
+                                        <th>Source</th>
+                                        <th>City</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="iocBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div><!-- end tab-feed -->
+
+                <!-- ══════════════════════════
+                 TAB 3: ANALYTICS
+            ══════════════════════════ -->
+                <div class="tab-pane" id="tab-analytics">
+
+                    <div class="nist-grid mb">
+                        <div class="nc" style="border-top-color:#00d68f">
+                            <div class="nfn">Identify</div>
+                            <div class="nnum cg" id="nistId">—</div>
+                            <div class="ndsc">Asset and risk</div>
+                        </div>
+                        <div class="nc" style="border-top-color:#80aaff">
+                            <div class="nfn">Protect</div>
+                            <div class="nnum" style="color:#80aaff" id="nistPr">—</div>
+                            <div class="ndsc">Safeguards</div>
+                        </div>
+                        <div class="nc" style="border-top-color:#ffaa44">
+                            <div class="nfn">Detect</div>
+                            <div class="nnum co" id="nistDe">—</div>
+                            <div class="ndsc">Find events</div>
+                        </div>
+                        <div class="nc" style="border-top-color:#ff8888">
+                            <div class="nfn">Respond</div>
+                            <div class="nnum cr" id="nistRe">—</div>
+                            <div class="ndsc">Take action</div>
+                        </div>
+                        <div class="nc" style="border-top-color:#bb88ff">
+                            <div class="nfn">Recover</div>
+                            <div class="nnum cp" id="nistRc">—</div>
+                            <div class="ndsc">Restore ops</div>
+                        </div>
+                    </div>
+
+                    <div class="r2 mb">
+                        <div class="card">
+                            <div class="ch">
+                                <div class="ct">Threats by Australian City</div>
+                            </div>
+                            <div style="height:200px;position:relative"><canvas id="cityChart"></canvas></div>
+                        </div>
+                        <div class="card">
+                            <div class="ch">
+                                <div class="ct">Affected Industries <span class="cs">— unclassified excluded</span>
+                                </div>
+                            </div>
+                            <div style="height:200px;position:relative"><canvas id="indChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="r3 mb">
+                        <div class="card">
+                            <div class="ch">
+                                <div class="ct">Malware Classification</div>
+                            </div>
+                            <div style="height:200px;position:relative"><canvas id="malwareTypeChart"></canvas></div>
+                        </div>
+                        <div class="card">
+                            <div class="ch">
+                                <div class="ct">ASD Essential Eight Mapping</div>
+                            </div>
+                            <div style="height:200px;position:relative"><canvas id="asdChart"></canvas></div>
+                        </div>
+                        <div class="card">
+                            <div class="ch">
+                                <div class="ct">AU State Distribution</div>
+                            </div>
+                            <div style="height:200px;position:relative"><canvas id="stateChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="r2">
+                        <div class="card">
+                            <div class="ch">
+                                <div class="ct">IOC Type Breakdown</div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:center">
+                                <div style="height:180px;position:relative"><canvas id="iocTypeChart"></canvas></div>
+                                <div id="iocTypeTable"></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="ch">
+                                <div class="ct">Top Malware Families <span class="cs">— named only</span></div>
+                            </div>
+                            <div id="malFamilyList"></div>
+                        </div>
+                    </div>
+
+                </div><!-- end tab-analytics -->
+
+                <!-- ══════════════════════════
+                 TAB 4: RISK & CVSS
+            ══════════════════════════ -->
+                <div class="tab-pane" id="tab-risk">
+
+                    <!-- Row 1: 4 CVSS KPIs (compact) -->
+                    <div class="r4 mb-sm">
+                        <div class="kpi kpi-sm kk-yellow">
+                            <div class="kl">Average CVSS</div>
+                            <div class="kv kv-sm cy" id="avgCvss">—</div>
+                            <div class="cmeter">
+                                <div class="cfill" id="avgCvssBar"></div>
+                            </div>
+                            <div class="ks" id="avgCvssLbl">Risk Level</div>
+                        </div>
+                        <div class="kpi kpi-sm kk-red">
+                            <div class="kl">Critical (CVSS 9+)</div>
+                            <div class="kv kv-sm cr" id="crit9Count">—</div>
+                            <div class="ks">immediate action</div>
+                        </div>
+                        <div class="kpi kpi-sm kk-red">
+                            <div class="kl">Highest CVSS</div>
+                            <div class="kv kv-sm cr" id="maxCvss">—</div>
+                            <div class="cmeter">
+                                <div class="cfill" id="maxCvssBar"></div>
+                            </div>
+                            <div class="ks mn" id="maxCvssIoc" style="font-size:9px">—</div>
+                        </div>
+                        <div class="kpi kpi-sm kk-orange">
+                            <div class="kl">Critical + High</div>
+                            <div class="kv kv-sm co" id="critHighCount">—</div>
+                            <div class="ks">high priority threats</div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Risk Matrix (left) + CVSS Distribution (right) -->
+                    <div class="r2 mb-sm">
+                        <div class="card">
+                            <div class="ch ch-sm">
+                                <div class="ct">Risk Assessment Matrix
+                                    <span class="cs">— ISO/IEC 27005:2022</span>
+                                </div>
+                                <span class="sl" id="riskMatrixLbl"></span>
+                            </div>
+                            <div style="height:200px;position:relative">
+                                <canvas id="riskMatrix"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="ch ch-sm">
+                                <div class="ct">CVSS Score Distribution</div>
+                            </div>
+                            <div style="height:140px;position:relative">
+                                <canvas id="cvssChart"></canvas>
+                            </div>
+                            <div id="cvssDist" style="margin-top:8px"></div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: MITRE (left) + Top 5 CVSS (right) -->
+                    <div class="r2 mb-sm">
+                        <div class="card">
+                            <div class="ch ch-sm">
+                                <div class="ct">MITRE ATT&CK Frequency
+                                    <span class="cs">— weighted by CVSS</span>
+                                </div>
+                            </div>
+                            <div id="mitreList"></div>
+                        </div>
+                        <div class="card">
+                            <div class="ch ch-sm">
+                                <div class="ct">Top 5 Highest Risk Threats
+                                    <span class="cs">— city &amp; category only</span>
+                                </div>
+                            </div>
+                            <table class="ptbl" id="top5CvssTable" style="font-size:10.5px">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>CVSS</th>
+                                        <th>Sev</th>
+                                        <th>Category</th>
+                                        <th>MITRE</th>
+                                        <th>City</th>
+                                        <th>Source</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="top5CvssBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Methodology — compact horizontal strip -->
+                    <div class="card">
+                        <div class="ch ch-sm">
+                            <div class="ct">CVSS Calculation Methodology</div>
+                        </div>
+                        <div class="cvss-method-strip">
+                            <div class="cms-step">
+                                <div class="cms-title">Step 1 — Base Score</div>
+                                <div class="cms-body">Critical=9.0 · High=7.5 · Medium=5.0 · Low=2.5</div>
+                            </div>
+                            <div class="cms-arrow">→</div>
+                            <div class="cms-step">
+                                <div class="cms-title">Step 2 — Confidence</div>
+                                <div class="cms-body">AbuseIPDB 0–100% · (c÷100)×2−1 · Range −1 to +1</div>
+                            </div>
+                            <div class="cms-arrow">→</div>
+                            <div class="cms-step">
+                                <div class="cms-title">Step 3 — Category Boost</div>
+                                <div class="cms-body">C2/Ransomware +0.5 · DDoS +0.3 · Phishing +0.1</div>
+                            </div>
+                            <div class="cms-arrow">+</div>
+                            <div class="cms-fw">
+                                <span style="color:#ff8888">MITRE</span>
+                                <span style="color:#80aaff">NIST CSF</span>
+                                <span style="color:#00d68f">ASD E8</span>
+                                <span style="color:#bb88ff">ISO 27001</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- end tab-risk -->
+
+                <!-- ══════════════════════════
+                 TAB 5: IR & MITIGATION
+            ══════════════════════════ -->
+                <div class="tab-pane" id="tab-ir">
+
+                    <!-- ACSC always-visible contact bar -->
+                    <div style="display:flex;align-items:center;gap:10px;
+                    background:rgba(255,61,90,.06);border:1px solid rgba(255,61,90,.2);
+                    border-radius:8px;padding:8px 14px;margin-bottom:9px;flex-wrap:wrap">
+                        <span style="font-size:11px;color:#ff4545;font-weight:700">🇦🇺 Australian Reporting
+                            Obligations</span>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px">
+                            <a href="https://www.cyber.gov.au/report" target="_blank" class="acsc-btn">
+                                🔗 Report to ACSC
+                            </a>
+                            <span style="color:#3a5878">Privacy Act 1988 — OAIC within 30 days</span>
+                            <span style="color:#ff4545;font-weight:600">·</span>
+                            <span style="color:#3a5878">SOCI Act 2018 — ASD within 12 hours</span>
+                            <span style="color:#ff4545;font-weight:600">·</span>
+                            <span style="color:#3a5878">Ransomware — 1300 CYBER1</span>
+                        </div>
+                    </div>
+
+                    <!-- Compact info bar -->
+                    <div class="ir-infobar mb">
+                        <div class="ir-info-item">
+                            <span class="ir-sev-dot" style="background:var(--red)"></span>
+                            <span style="color:var(--red);font-weight:700">Critical</span>
+                            <span class="ir-info-val">1 hour</span>
+                            <span class="ir-info-sub">C2 · Ransomware · DDoS</span>
+                        </div>
+                        <div class="ir-info-sep"></div>
+                        <div class="ir-info-item">
+                            <span class="ir-sev-dot" style="background:var(--orange)"></span>
+                            <span style="color:var(--orange);font-weight:700">High</span>
+                            <span class="ir-info-val">4 hours</span>
+                            <span class="ir-info-sub">Phishing · Brute Force · Malware</span>
+                        </div>
+                        <div class="ir-info-sep"></div>
+                        <div class="ir-info-item">
+                            <span class="ir-sev-dot" style="background:var(--yellow)"></span>
+                            <span style="color:var(--yellow);font-weight:700">Medium</span>
+                            <span class="ir-info-val">24 hours</span>
+                            <span class="ir-info-sub">Port Scan · Recon</span>
+                        </div>
+                        <div style="margin-left:auto;font-size:10.5px;color:var(--text3)">
+                            8 playbooks &nbsp;·&nbsp; NIST SP 800-61r2
+                        </div>
+                    </div>
+
+                    <!-- Playbook table — clicking a row expands inline -->
+                    <div class="card">
+                        <div class="ch">
+                            <div class="ct">Incident Response Playbooks
+                                <span class="cs">— click any row to expand</span>
+                            </div>
+                        </div>
+                        <div style="overflow-x:auto">
+                            <table class="ptbl" id="irTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width:24px"></th>
+                                        <th>Threat Category</th>
+                                        <th>Severity</th>
+                                        <th>MITRE</th>
+                                        <th>NIST</th>
+                                        <th>ASD Essential 8</th>
+                                        <th>Response Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="irSummaryBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div><!-- end tab-ir -->
+
+            </div><!-- end content -->
+        </div><!-- end body -->
+
+        <div class="footer">
+            <span style="color:#80aaff;font-weight:700">AAHE</span> &nbsp;·&nbsp;
+            <span style="color:#ffc800;font-weight:600">Group 14</span> &nbsp;·&nbsp;
+            CYB815 Cybersecurity Capstone &nbsp;·&nbsp;
+            OTX · AbuseIPDB · URLhaus · Feodo Tracker &nbsp;·&nbsp;
+            MITRE ATT&CK · NIST CSF · CVSS v3.1 · ASD Essential 8 · ISO 27001 &nbsp;·&nbsp;
+            For Educational and Research Use Only
+        </div>
+
+    </div><!-- app -->
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/table.js"></script>
+    <script src="js/ir.js"></script>
+    <script>
+        function showTab(name, el) {
+            document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            const p = document.getElementById('tab-' + name);
+            if (p) p.classList.add('active');
+            if (el) el.classList.add('active');
+            // Invalidate map size when switching to overview
+            if (name === 'overview' && window.map) {
+                setTimeout(() => window.map.invalidateSize(), 100);
+            }
+        }
+    </script>
+</body>
+
+</html>
