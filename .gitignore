@@ -1,6 +1,5 @@
 config.py
 abuseipdb_cache.json
-data.json
 threats.db
 normalised.sh
 otx.sh
@@ -10,4 +9,3 @@ __pycache__/
 *.db
 .venv/
 *.sh
-*.json
