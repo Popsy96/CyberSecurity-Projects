@@ -38,6 +38,10 @@ function renderTable(threats) {
       <td style="font-size:10px;color:#7a9cc8;white-space:nowrap">${t.timestamp_au || t.timestamp_utc || '—'}</td>
     </tr>`).join('');
 
+    // Update export button with count
+    const expBtn = document.getElementById('exportBtn');
+    if (expBtn) expBtn.textContent = `⬇ Export ${display.length.toLocaleString()} CSV`;
+
     if (window.DT) { window.DT.destroy(); window.DT = null; }
     window.DT = new DataTable('#iocTable', {
         pageLength: 15,
@@ -57,7 +61,7 @@ function renderTable(threats) {
 }
 
 window.exportCSV = () => {
-    const threats = window.FILTERED.length ? window.FILTERED : window.ALL;
+    const threats = window.FILTERED || window.ALL;
     const headers = ['severity', 'cvss_score', 'type', 'ioc', 'category',
         'mitre_technique', 'nist_function', 'asd_e8',
         'industry', 'source', 'city', 'timestamp_au'];

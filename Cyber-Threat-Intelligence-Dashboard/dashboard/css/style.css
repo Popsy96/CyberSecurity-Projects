@@ -2192,3 +2192,220 @@ table.dataTable tbody td {
     border-color: rgba(255, 69, 69, .3);
     color: var(--red);
 }
+
+/* ══════════════════════════════════════════════
+   OVERVIEW — One-page compact layout
+══════════════════════════════════════════════ */
+
+/* Compact date filter — single horizontal line */
+.dfilter-compact {
+    padding: 8px 14px !important;
+    gap: 7px !important;
+    flex-wrap: nowrap !important;
+    margin-bottom: 9px !important;
+    align-items: center !important;
+}
+
+.dfilter-compact .dfilter-label {
+    margin-bottom: 0 !important;
+    font-size: 7.5px;
+    white-space: nowrap;
+}
+
+.dfilter-compact .dfilter-presets {
+    gap: 4px;
+}
+
+.dfilter-compact .dbtn {
+    padding: 3px 9px;
+    font-size: 10px;
+}
+
+.dfilter-compact .dinput {
+    padding: 3px 7px;
+    font-size: 10px;
+}
+
+.dfilter-compact .dbtn-apply {
+    padding: 3px 10px;
+    font-size: 10px;
+}
+
+.dfilter-compact .dbtn-clear {
+    padding: 3px 8px;
+    font-size: 10px;
+}
+
+/* Compact KPI cards */
+.mb-sm {
+    margin-bottom: 8px !important;
+}
+
+.kpi-sm {
+    padding: 9px 11px !important;
+}
+
+.kv-sm {
+    font-size: 22px !important;
+    line-height: 1 !important;
+}
+
+.kpi-sm .kl {
+    margin-bottom: 2px !important;
+    font-size: 8.5px !important;
+}
+
+.kpi-sm .ks {
+    margin-top: 2px !important;
+    font-size: 8.5px !important;
+}
+
+/* Compact card header */
+.ch-sm {
+    padding: 7px 12px !important;
+}
+
+/* Main overview grid */
+.ov-main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    /* Fill remaining viewport height after date filter + KPIs */
+    height: calc(100vh - var(--header-h) - 46px - 74px - 18px);
+    min-height: 400px;
+}
+
+.ov-left {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.ov-right {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Map fills left column exactly */
+.ov-left .card {
+    flex: 1;
+    min-height: 0;
+}
+
+#auMap {
+    height: calc(100% - 36px) !important;
+    min-height: 260px !important;
+}
+
+/* Severity bars compact */
+#sevBars>div {
+    padding: 4px 12px !important;
+    font-size: 10.5px !important;
+}
+
+/* Fetch runs compact */
+#fetchRuns>div {
+    font-size: 10px !important;
+    padding: 3px 12px !important;
+}
+
+/* Right column cards fill available space */
+.ov-right .card:last-child {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Responsive: stack on smaller screens */
+@media (max-width: 1100px) {
+    .ov-main-grid {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    #auMap {
+        height: 280px !important;
+    }
+
+    .dfilter-compact {
+        flex-wrap: wrap !important;
+    }
+}
+
+/* ── ACSC button ── */
+.acsc-btn {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 61, 90, .1);
+    border: 1px solid rgba(255, 61, 90, .3);
+    color: #ff7a90;
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+    cursor: pointer;
+}
+
+.acsc-btn:hover {
+    background: rgba(255, 61, 90, .2);
+    color: #ff4545;
+    text-decoration: none;
+}
+
+/* ── Export button with count ── */
+#exportBtn {
+    min-width: 120px;
+}
+
+/* ── CVSS Methodology strip ── */
+.cvss-method-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px 12px;
+    flex-wrap: wrap;
+}
+
+.cms-step {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 7px 12px;
+    flex: 1;
+    min-width: 160px;
+}
+
+.cms-title {
+    font-size: 9px;
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 4px;
+}
+
+.cms-body {
+    font-size: 10px;
+    color: var(--text2);
+    line-height: 1.5;
+}
+
+.cms-arrow {
+    font-size: 16px;
+    color: var(--text3);
+    flex-shrink: 0;
+}
+
+.cms-fw {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+}

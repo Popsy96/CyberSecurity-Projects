@@ -19,21 +19,46 @@ function renderIRSummary() {
   const tbody = document.getElementById('irSummaryBody');
   if (!tbody || !summary.length) return;
 
-  tbody.innerHTML = summary.map((r, idx) => `
+  // Count live threats per category
+  const threatCounts = {};
+  (window.ALL || []).forEach(t => {
+    if (t.category) threatCounts[t.category] = (threatCounts[t.category] || 0) + 1;
+  });
+
+  tbody.innerHTML = summary.map((r, idx) => {
+    const liveCount = threatCounts[r.category] || 0;
+    const respColor = r.severity === 'Critical' ? 'var(--red)'
+      : r.severity === 'High' ? 'var(--orange)'
+        : 'var(--green)';
+    const urgencyW = r.severity === 'Critical' ? 100
+      : r.severity === 'High' ? 65 : 25;
+    return `
         <tr class="ir-main-row" data-idx="${idx}" onclick="togglePlaybook(${idx}, '${r.category}')">
             <td>
                 <button class="ir-toggle-btn" id="ir-toggle-${idx}">›</button>
             </td>
-            <td><b style="color:var(--text)">${r.category}</b></td>
+            <td>
+                <b style="color:var(--text)">${r.category}</b>
+                ${liveCount > 0 ? `<span style="font-size:9px;color:var(--text3);margin-left:6px">
+                    <span style="color:${respColor};font-weight:700">${liveCount.toLocaleString()}</span> active</span>` : ''}
+            </td>
             <td><span style="font-size:11px;font-weight:600;color:${irSevColor(r.severity)}">${r.severity}</span></td>
             <td><span class="badge badge-mitre">${r.mitre.split('—')[0].trim()}</span></td>
             <td><span style="font-size:11px;color:${nistColor(r.nist)}">${r.nist}</span></td>
             <td style="font-size:11px;color:var(--text2)">${r.asd_e8}</td>
-            <td><span style="font-size:11px;font-weight:600;color:${r.severity === 'Critical' ? 'var(--red)' : 'var(--orange)'}">${r.response_time}</span></td>
+            <td>
+                <div style="display:flex;align-items:center;gap:6px">
+                    <div style="width:50px;height:4px;background:#0a1628;border-radius:2px;overflow:hidden">
+                        <div style="width:${urgencyW}%;height:100%;background:${respColor};border-radius:2px"></div>
+                    </div>
+                    <span style="font-size:11px;font-weight:600;color:${respColor}">${r.response_time}</span>
+                </div>
+            </td>
         </tr>
         <tr class="ir-expand-row" id="ir-detail-${idx}" style="display:none">
             <td colspan="7"></td>
-        </tr>`).join('');
+        </tr>`;
+  }).join('');
 }
 
 // ── INLINE ACCORDION ──────────────────────────────────────────

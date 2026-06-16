@@ -84,123 +84,115 @@
             ══════════════════════════ -->
                 <div class="tab-pane active" id="tab-overview">
 
-                    <!-- Date Filter — redesigned -->
-                    <div class="dfilter">
-                        <div class="dfilter-left">
-                            <span class="dfilter-label">DATE RANGE</span>
-                            <div class="dfilter-presets">
-                                <button class="dbtn active" id="btn-all" onclick="setPreset('all')">All Time</button>
-                                <button class="dbtn" id="btn-7days" onclick="setPreset('7days')">Last 7 Days</button>
-                                <button class="dbtn" id="btn-30days" onclick="setPreset('30days')">Last 30 Days</button>
-                                <button class="dbtn" id="btn-project" onclick="setPreset('project')">Project
-                                    Period</button>
-                            </div>
+                    <!-- ── ROW 1: Date Filter (compact single line) ── -->
+                    <div class="dfilter dfilter-compact">
+                        <span class="dfilter-label">DATE</span>
+                        <div class="dfilter-presets">
+                            <button class="dbtn active" id="btn-all" onclick="setPreset('all')">All Time</button>
+                            <button class="dbtn" id="btn-7days" onclick="setPreset('7days')">Last 7 Days</button>
+                            <button class="dbtn" id="btn-30days" onclick="setPreset('30days')">Last 30 Days</button>
+                            <button class="dbtn" id="btn-project" onclick="setPreset('project')">Project Period</button>
                         </div>
                         <div class="dfilter-sep"></div>
-                        <div class="dfilter-custom">
-                            <span class="dfilter-label">CUSTOM RANGE</span>
-                            <div class="dfilter-custom-row">
-                                <input type="date" id="fromDate" class="dinput" placeholder="From" />
-                                <span class="dfilter-to">→</span>
-                                <input type="date" id="toDate" class="dinput" placeholder="To" />
-                            </div>
-                        </div>
-                        <div class="dfilter-actions">
-                            <button class="dbtn-apply" id="btn-apply-date" onclick="applyActiveDateFilter()"
-                                title="Apply custom date range">Apply Custom</button>
-                            <button class="dbtn-clear" onclick="clearDateFilter()"
-                                title="Reset to All Time">Clear</button>
-                        </div>
-                        <div class="dfilter-info">
-                            <span id="dateInfo" class="dfilter-count"></span>
-                        </div>
+                        <input type="date" id="fromDate" class="dinput" />
+                        <span class="dfilter-to">→</span>
+                        <input type="date" id="toDate" class="dinput" />
+                        <button class="dbtn-apply" id="btn-apply-date" onclick="applyActiveDateFilter()">Apply</button>
+                        <button class="dbtn-clear" onclick="clearDateFilter()">Clear</button>
+                        <span id="dateInfo" class="dfilter-count" style="margin-left:auto"></span>
                     </div>
 
-                    <!-- KPI Cards -->
-                    <div class="r6 mb">
-                        <div class="kpi kk-blue">
+                    <!-- ── ROW 2: KPI Cards (compact) ── -->
+                    <div class="r6 mb-sm">
+                        <div class="kpi kpi-sm kk-blue">
                             <div class="kl">Total IOCs</div>
-                            <div class="kv" id="kpiTotal">—</div>
-                            <div class="ks">threats collected</div>
+                            <div class="kv kv-sm" id="kpiTotal">—</div>
+                            <div class="ks">collected</div>
                         </div>
-                        <div class="kpi kk-red">
+                        <div class="kpi kpi-sm kk-red">
                             <div class="kl">Critical</div>
-                            <div class="kv cr" id="kpiCritical">—</div>
-                            <div class="ks">act immediately</div>
+                            <div class="kv kv-sm cr" id="kpiCritical">—</div>
+                            <div class="ks">act now</div>
                         </div>
-                        <div class="kpi kk-orange">
+                        <div class="kpi kpi-sm kk-orange">
                             <div class="kl">High</div>
-                            <div class="kv co" id="kpiHigh">—</div>
-                            <div class="ks">investigate now</div>
+                            <div class="kv kv-sm co" id="kpiHigh">—</div>
+                            <div class="ks">investigate</div>
                         </div>
-                        <div class="kpi kk-yellow">
+                        <div class="kpi kpi-sm kk-yellow">
                             <div class="kl">Avg CVSS</div>
-                            <div class="kv cy" id="kpiCvss">—</div>
-                            <div class="ks">/ 10.0 risk score</div>
+                            <div class="kv kv-sm cy" id="kpiCvss">—</div>
+                            <div class="ks">/ 10.0</div>
                         </div>
-                        <div class="kpi kk-cyan">
+                        <div class="kpi kpi-sm kk-cyan">
                             <div class="kl">Phishing</div>
-                            <div class="kv cc" id="kpiPhishing">—</div>
-                            <div class="ks">campaigns detected</div>
+                            <div class="kv kv-sm cc" id="kpiPhishing">—</div>
+                            <div class="ks">campaigns</div>
                         </div>
-                        <div class="kpi kk-purple">
-                            <div class="kl">Suspicious Activity</div>
-                            <div class="kv cp" id="kpiSuspicious">—</div>
+                        <div class="kpi kpi-sm kk-purple">
+                            <div class="kl">Suspicious</div>
+                            <div class="kv kv-sm cp" id="kpiSuspicious">—</div>
                             <div class="ks">network threats</div>
                         </div>
                     </div>
 
-                    <!-- IOC Timeline -->
-                    <div class="card mb">
-                        <div class="ch">
-                            <div class="ct">IOC Detections Over Time
-                                <span class="cs">— from 13 Apr 2026 · threat activity by date</span>
-                            </div>
-                        </div>
-                        <div style="height:120px;position:relative">
-                            <canvas id="timelineChart"></canvas>
-                        </div>
-                    </div>
+                    <!-- ── ROW 3: Main grid — Map left, right column ── -->
+                    <div class="ov-main-grid">
 
-                    <!-- Attack Categories (above map) -->
-                    <div class="card mb">
-                        <div class="ch">
-                            <div class="ct">Attack Categories <span class="cs">— by threat type</span></div>
-                        </div>
-                        <div style="height:180px;position:relative">
-                            <canvas id="ovCatChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Map + Severity -->
-                    <div class="r73 mb">
-                        <div class="card" style="padding:0;overflow:hidden">
-                            <div
-                                style="padding:13px 15px 0;display:flex;justify-content:space-between;align-items:center">
-                                <div class="ct">Australia Threat Map</div>
-                                <span class="sl" id="mapCount"></span>
-                            </div>
-                            <div id="auMap" style="height:320px"></div>
-                        </div>
-                        <div class="col">
-                            <div class="card">
-                                <div class="ch">
-                                    <div class="ct">Severity Breakdown</div>
+                        <!-- LEFT: Map (tall, takes most space) -->
+                        <div class="ov-left">
+                            <div class="card" style="padding:0;overflow:hidden;height:100%">
+                                <div
+                                    style="padding:9px 13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
+                                    <div class="ct" style="font-size:11px">🗺 Australia Threat Map</div>
+                                    <span class="sl" id="mapCount"></span>
                                 </div>
-                                <div id="sevBars"></div>
+                                <div id="auMap" style="height:calc(100% - 36px)"></div>
                             </div>
+                        </div>
+
+                        <!-- RIGHT: stacked panels -->
+                        <div class="ov-right">
+
+                            <!-- Timeline -->
+                            <div class="card mb-sm">
+                                <div class="ch ch-sm">
+                                    <div class="ct" style="font-size:11px">IOC Timeline
+                                        <span class="cs">— from 13 Apr 2026</span>
+                                    </div>
+                                </div>
+                                <div style="height:150px;position:relative">
+                                    <canvas id="timelineChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Attack Categories — full width, taller -->
+                            <div class="card mb-sm">
+                                <div class="ch ch-sm">
+                                    <div class="ct" style="font-size:11px">Attack Categories
+                                        <span class="cs">— by threat type</span>
+                                    </div>
+                                </div>
+                                <div style="height:170px;position:relative">
+                                    <canvas id="ovCatChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Recent runs + Additional -->
                             <div class="card">
-                                <div class="ch">
-                                    <div class="ct">Recent Collection Runs</div>
+                                <div class="ch ch-sm">
+                                    <div class="ct" style="font-size:11px">Recent Collection Runs</div>
                                 </div>
                                 <div id="fetchRuns"></div>
-                                <div style="margin-top:14px">
-                                    <div class="ct" style="margin-bottom:9px">Additional Threats</div>
+                                <div style="margin-top:10px">
+                                    <div class="ct" style="font-size:10px;margin-bottom:6px;color:var(--text3)">
+                                        Additional Threats Detected</div>
                                     <div id="additionalCats"></div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+
+                        </div><!-- end ov-right -->
+                    </div><!-- end ov-main-grid -->
 
                 </div><!-- end tab-overview -->
 
@@ -223,7 +215,7 @@
                             <div class="fbar-actions">
                                 <button class="fbtn-apply" id="applyFiltersBtn">Apply Filters</button>
                                 <button class="fbtn-clear" id="clearFilters">Reset All</button>
-                                <button class="fbtn-export" onclick="exportCSV()">⬇ CSV</button>
+                                <button class="fbtn-export" onclick="exportCSV()" id="exportBtn">⬇ Export CSV</button>
                             </div>
                         </div>
 
@@ -306,6 +298,17 @@
                                 <option>Infostealer</option>
                                 <option>RAT</option>
                                 <option>Trojan</option>
+                            </select>
+                            <select id="mitreFilter" class="fpill-sel">
+                                <option value="">All MITRE</option>
+                                <option>T1566</option>
+                                <option>T1071</option>
+                                <option>T1110</option>
+                                <option>T1204</option>
+                                <option>T1498</option>
+                                <option>T1190</option>
+                                <option>T1486</option>
+                                <option>T1046</option>
                             </select>
                         </div>
 
@@ -442,102 +445,119 @@
             ══════════════════════════ -->
                 <div class="tab-pane" id="tab-risk">
 
-                    <!-- Row 1: CVSS KPIs -->
-                    <div class="r4 mb">
-                        <div class="kpi kk-yellow">
-                            <div class="kl">Average CVSS Score</div>
-                            <div class="kv cy" id="avgCvss">—</div>
+                    <!-- Row 1: 4 CVSS KPIs (compact) -->
+                    <div class="r4 mb-sm">
+                        <div class="kpi kpi-sm kk-yellow">
+                            <div class="kl">Average CVSS</div>
+                            <div class="kv kv-sm cy" id="avgCvss">—</div>
                             <div class="cmeter">
                                 <div class="cfill" id="avgCvssBar"></div>
                             </div>
                             <div class="ks" id="avgCvssLbl">Risk Level</div>
                         </div>
-                        <div class="kpi kk-red">
+                        <div class="kpi kpi-sm kk-red">
                             <div class="kl">Critical (CVSS 9+)</div>
-                            <div class="kv cr" id="crit9Count">—</div>
+                            <div class="kv kv-sm cr" id="crit9Count">—</div>
                             <div class="ks">immediate action</div>
                         </div>
-                        <div class="kpi kk-red">
-                            <div class="kl">Highest CVSS Score</div>
-                            <div class="kv cr" id="maxCvss">—</div>
+                        <div class="kpi kpi-sm kk-red">
+                            <div class="kl">Highest CVSS</div>
+                            <div class="kv kv-sm cr" id="maxCvss">—</div>
                             <div class="cmeter">
                                 <div class="cfill" id="maxCvssBar"></div>
                             </div>
-                            <div class="ks mn" id="maxCvssIoc" style="font-size:9.5px">—</div>
+                            <div class="ks mn" id="maxCvssIoc" style="font-size:9px">—</div>
                         </div>
-                        <div class="kpi kk-orange">
+                        <div class="kpi kpi-sm kk-orange">
                             <div class="kl">Critical + High</div>
-                            <div class="kv co" id="critHighCount">—</div>
+                            <div class="kv kv-sm co" id="critHighCount">—</div>
                             <div class="ks">high priority threats</div>
                         </div>
                     </div>
 
-                    <!-- Row 2: Risk Matrix (full width — hero element) -->
-                    <div class="card mb">
-                        <div class="ch">
-                            <div class="ct">Risk Assessment Matrix
-                                <span class="cs">— ISO/IEC 27005:2022 · Likelihood × Impact · bubble size = live threat
-                                    volume</span>
+                    <!-- Row 2: Risk Matrix (left) + CVSS Distribution (right) -->
+                    <div class="r2 mb-sm">
+                        <div class="card">
+                            <div class="ch ch-sm">
+                                <div class="ct">Risk Assessment Matrix
+                                    <span class="cs">— ISO/IEC 27005:2022</span>
+                                </div>
+                                <span class="sl" id="riskMatrixLbl"></span>
                             </div>
-                            <span class="sl" id="riskMatrixLbl"></span>
-                        </div>
-                        <div class="risk-matrix-layout">
-                            <div class="risk-matrix-canvas-wrap">
+                            <div style="height:200px;position:relative">
                                 <canvas id="riskMatrix"></canvas>
                             </div>
-                            <div id="riskRegister"></div>
+                        </div>
+                        <div class="card">
+                            <div class="ch ch-sm">
+                                <div class="ct">CVSS Score Distribution</div>
+                            </div>
+                            <div style="height:140px;position:relative">
+                                <canvas id="cvssChart"></canvas>
+                            </div>
+                            <div id="cvssDist" style="margin-top:8px"></div>
                         </div>
                     </div>
 
-                    <!-- Row 3: CVSS Distribution + MITRE -->
-                    <div class="r2 mb">
+                    <!-- Row 3: MITRE (left) + Top 5 CVSS (right) -->
+                    <div class="r2 mb-sm">
                         <div class="card">
-                            <div class="ch">
-                                <div class="ct">CVSS Score Distribution</div>
-                            </div>
-                            <div style="height:160px;position:relative">
-                                <canvas id="cvssChart"></canvas>
-                            </div>
-                            <div id="cvssDist" style="margin-top:11px"></div>
-                        </div>
-                        <div class="card">
-                            <div class="ch">
-                                <div class="ct">MITRE ATT&CK Technique Frequency
-                                    <span class="cs">— weighted by CVSS score</span>
+                            <div class="ch ch-sm">
+                                <div class="ct">MITRE ATT&CK Frequency
+                                    <span class="cs">— weighted by CVSS</span>
                                 </div>
                             </div>
                             <div id="mitreList"></div>
                         </div>
-                    </div>
-
-                    <!-- Row 4: Methodology -->
-                    <div class="card">
-                        <div class="ch">
-                            <div class="ct">CVSS Calculation Methodology</div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 1fr;gap:8px">
-                            <div class="mstep" style="grid-column:span 2">
-                                <div class="mstitle">Step 1 — Base Score</div>
-                                <div class="msbody">Critical = 9.0 &nbsp;·&nbsp; High = 7.5 &nbsp;·&nbsp; Medium = 5.0
-                                    &nbsp;·&nbsp; Low = 2.5</div>
-                            </div>
-                            <div class="mstep" style="grid-column:span 2">
-                                <div class="mstitle">Step 2 — Confidence Adjustment</div>
-                                <div class="msbody">AbuseIPDB 0–100% &nbsp;·&nbsp; (c÷100)×2−1 &nbsp;·&nbsp; Range −1 to
-                                    +1 &nbsp;·&nbsp; 85% = +0.7</div>
-                            </div>
-                            <div class="mstep" style="grid-column:span 1">
-                                <div class="mstitle">Step 3 — Boost</div>
-                                <div class="msbody">C2 +0.5 &nbsp; Ransom +0.5 &nbsp; DDoS +0.3 &nbsp; Phishing +0.1
+                        <div class="card">
+                            <div class="ch ch-sm">
+                                <div class="ct">Top 5 Highest Risk Threats
+                                    <span class="cs">— city &amp; category only</span>
                                 </div>
                             </div>
-                            <div class="fwpill">
-                                <div class="fwpname" style="color:#ff8888">MITRE ATT&CK</div>
-                                <div class="fwpdesc">Technique per threat</div>
+                            <table class="ptbl" id="top5CvssTable" style="font-size:10.5px">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>CVSS</th>
+                                        <th>Sev</th>
+                                        <th>Category</th>
+                                        <th>MITRE</th>
+                                        <th>City</th>
+                                        <th>Source</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="top5CvssBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Methodology — compact horizontal strip -->
+                    <div class="card">
+                        <div class="ch ch-sm">
+                            <div class="ct">CVSS Calculation Methodology</div>
+                        </div>
+                        <div class="cvss-method-strip">
+                            <div class="cms-step">
+                                <div class="cms-title">Step 1 — Base Score</div>
+                                <div class="cms-body">Critical=9.0 · High=7.5 · Medium=5.0 · Low=2.5</div>
                             </div>
-                            <div class="fwpill">
-                                <div class="fwpname" style="color:#80aaff">NIST CSF</div>
-                                <div class="fwpdesc">5 functions</div>
+                            <div class="cms-arrow">→</div>
+                            <div class="cms-step">
+                                <div class="cms-title">Step 2 — Confidence</div>
+                                <div class="cms-body">AbuseIPDB 0–100% · (c÷100)×2−1 · Range −1 to +1</div>
+                            </div>
+                            <div class="cms-arrow">→</div>
+                            <div class="cms-step">
+                                <div class="cms-title">Step 3 — Category Boost</div>
+                                <div class="cms-body">C2/Ransomware +0.5 · DDoS +0.3 · Phishing +0.1</div>
+                            </div>
+                            <div class="cms-arrow">+</div>
+                            <div class="cms-fw">
+                                <span style="color:#ff8888">MITRE</span>
+                                <span style="color:#80aaff">NIST CSF</span>
+                                <span style="color:#00d68f">ASD E8</span>
+                                <span style="color:#bb88ff">ISO 27001</span>
                             </div>
                         </div>
                     </div>
@@ -548,6 +568,24 @@
                  TAB 5: IR & MITIGATION
             ══════════════════════════ -->
                 <div class="tab-pane" id="tab-ir">
+
+                    <!-- ACSC always-visible contact bar -->
+                    <div style="display:flex;align-items:center;gap:10px;
+                    background:rgba(255,61,90,.06);border:1px solid rgba(255,61,90,.2);
+                    border-radius:8px;padding:8px 14px;margin-bottom:9px;flex-wrap:wrap">
+                        <span style="font-size:11px;color:#ff4545;font-weight:700">🇦🇺 Australian Reporting
+                            Obligations</span>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px">
+                            <a href="https://www.cyber.gov.au/report" target="_blank" class="acsc-btn">
+                                🔗 Report to ACSC
+                            </a>
+                            <span style="color:#3a5878">Privacy Act 1988 — OAIC within 30 days</span>
+                            <span style="color:#ff4545;font-weight:600">·</span>
+                            <span style="color:#3a5878">SOCI Act 2018 — ASD within 12 hours</span>
+                            <span style="color:#ff4545;font-weight:600">·</span>
+                            <span style="color:#3a5878">Ransomware — 1300 CYBER1</span>
+                        </div>
+                    </div>
 
                     <!-- Compact info bar -->
                     <div class="ir-infobar mb">

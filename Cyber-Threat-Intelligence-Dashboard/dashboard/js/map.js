@@ -1,215 +1,200 @@
 /* ============================================================
-   map.js — Leaflet.js Australia threat map
-   Fixed to AU bounds — no zoom needed
+   map.js — AU Threat Map v3
+   City clusters only — all threats shown, no performance cap
    ============================================================ */
 
 let map, mLayer;
 
-// Australia geographic bounds
 const AU_BOUNDS = L.latLngBounds(
-    L.latLng(-44.0, 112.0),  // SW corner
-    L.latLng(-9.5, 154.5)   // NE corner
+    L.latLng(-44.0, 112.0),
+    L.latLng(-9.5, 154.5)
 );
+
+const CITY_COORDS = {
+    'Perth': [-31.9505, 115.8605],
+    'Darwin': [-12.4634, 130.8456],
+    'Adelaide': [-34.9285, 138.6007],
+    'Brisbane': [-27.4698, 153.0251],
+    'Sydney': [-33.8688, 151.2093],
+    'Melbourne': [-37.8136, 144.9631],
+    'Hobart': [-42.8821, 147.3272],
+    'Canberra': [-35.2809, 149.1300],
+    'Gold Coast': [-28.0167, 153.4000],
+    'Newcastle': [-32.9267, 151.7789],
+};
 
 function initMap() {
     map = L.map('auMap', {
-        center: [-27.0, 133.5],   // Centre of Australia
+        center: [-27.0, 133.5],
         zoom: 4,
-        minZoom: 4,               // Can't zoom out past Australia view
-        maxZoom: 10,              // Reasonable city-level zoom
-        maxBounds: AU_BOUNDS,     // Locked to AU — can't pan away
-        maxBoundsViscosity: 1.0,  // Hard lock — no bounce past bounds
+        minZoom: 4,
+        maxZoom: 10,
+        maxBounds: AU_BOUNDS,
+        maxBoundsViscosity: 1.0,
         zoomControl: true,
         attributionControl: false,
     });
 
-    // Dark-tinted tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        opacity: 0.30,
+        maxZoom: 18, opacity: 0.28,
     }).addTo(map);
 
-    // Add AU state boundary overlay for context
-    addStateLabels();
-
-    mLayer = L.layerGroup().addTo(map);
-
-    // Expose map globally so showTab can call invalidateSize()
-    window.map = map;
-}
-
-// ── State label markers ───────────────────────────────────────
-function addStateLabels() {
-    const states = [
-        { name: 'WA', lat: -25.5, lng: 121.6 },
-        { name: 'NT', lat: -19.5, lng: 133.5 },
-        { name: 'SA', lat: -30.0, lng: 135.5 },
-        { name: 'QLD', lat: -22.5, lng: 144.5 },
-        { name: 'NSW', lat: -32.5, lng: 146.5 },
-        { name: 'VIC', lat: -37.0, lng: 144.8 },
-        { name: 'TAS', lat: -42.0, lng: 146.5 },
-        { name: 'ACT', lat: -35.5, lng: 149.1 },
-    ];
-    states.forEach(s => {
-        L.marker([s.lat, s.lng], {
+    // State labels
+    [['WA', -25.5, 121.6], ['NT', -19.5, 133.5], ['SA', -30.0, 135.5],
+    ['QLD', -22.5, 144.5], ['NSW', -32.5, 146.5], ['VIC', -37.0, 144.8],
+    ['TAS', -42.0, 146.5], ['ACT', -35.5, 149.1]
+    ].forEach(([name, lat, lng]) => {
+        L.marker([lat, lng], {
             icon: L.divIcon({
                 className: '',
-                html: `<div style="
-                    font-family:'Inter',monospace;font-size:9px;font-weight:700;
-                    color:rgba(120,160,200,0.45);letter-spacing:1.5px;
-                    pointer-events:none;white-space:nowrap;user-select:none">
-                    ${s.name}
-                </div>`,
-                iconSize: [30, 14],
-                iconAnchor: [15, 7],
+                html: `<div style="font-size:9px;font-weight:700;color:rgba(120,160,200,0.35);
+                    letter-spacing:1.5px;pointer-events:none;user-select:none">${name}</div>`,
+                iconSize: [30, 14], iconAnchor: [15, 7],
             }),
             interactive: false,
         }).addTo(map);
     });
+
+    mLayer = L.layerGroup().addTo(map);
+    window.map = map;
+
+    // Mini legend bottom-left
+    const legend = L.control({ position: 'bottomleft' });
+    legend.onAdd = () => {
+        const div = L.DomUtil.create('div');
+        div.style.cssText = `background:rgba(7,11,28,.85);border:1px solid #1a2d45;
+            border-radius:6px;padding:7px 10px;font-size:9.5px;font-family:monospace;
+            color:#7a9cc8;line-height:1.9`;
+        div.innerHTML = `
+            <div style="color:#cde0ff;font-weight:700;margin-bottom:3px;letter-spacing:.5px">THREAT LEVEL</div>
+            <div><span style="color:#ff3d5a">●</span> Majority Critical</div>
+            <div><span style="color:#ff9800">●</span> Majority High</div>
+            <div><span style="color:#2979ff">●</span> Mixed / Lower</div>
+            <div style="margin-top:4px;color:#3a5878;font-size:8.5px">Click bubble for details<br>Bubble size = threat volume</div>`;
+        return div;
+    };
+    legend.addTo(map);
 }
 
-// ── City coordinates lookup ───────────────────────────────────
-const CITY_COORDS = {
-    'Perth': { lat: -31.9505, lng: 115.8605 },
-    'Darwin': { lat: -12.4634, lng: 130.8456 },
-    'Adelaide': { lat: -34.9285, lng: 138.6007 },
-    'Brisbane': { lat: -27.4698, lng: 153.0251 },
-    'Sydney': { lat: -33.8688, lng: 151.2093 },
-    'Melbourne': { lat: -37.8136, lng: 144.9631 },
-    'Hobart': { lat: -42.8821, lng: 147.3272 },
-    'Canberra': { lat: -35.2809, lng: 149.1300 },
-    'Gold Coast': { lat: -28.0167, lng: 153.4000 },
-    'Newcastle': { lat: -32.9267, lng: 151.7789 },
-};
-
-// ── Render threat markers ─────────────────────────────────────
 function renderMap(threats) {
     if (!map) return;
     mLayer.clearLayers();
-    let n = 0;
 
-    // Group threats by city for cluster sizing
+    // Group ALL threats by city — no cap
     const cityGroups = {};
+    const cityMaxCvss = {};
+    const cityCritCount = {};
+
     (threats || []).forEach(t => {
         const city = t.city;
-        if (!city || city === 'AU' || city === 'Unknown') return;
-        if (!cityGroups[city]) cityGroups[city] = [];
-        cityGroups[city].push(t);
+        if (!city || city === 'AU' || city === 'Unknown' || !CITY_COORDS[city]) return;
+        cityGroups[city] = (cityGroups[city] || 0) + 1;
+        cityMaxCvss[city] = Math.max(cityMaxCvss[city] || 0, t.cvss_score || 0);
+        cityCritCount[city] = (cityCritCount[city] || 0) + (t.severity === 'Critical' ? 1 : 0);
     });
 
-    // Plot individual markers (up to 1500 for performance)
-    const sample = (threats || []).filter(t => t.lat && t.lng).slice(0, 1500);
+    const totalMapped = Object.values(cityGroups).reduce((a, b) => a + b, 0);
+    const maxCount = Math.max(...Object.values(cityGroups), 1);
 
-    sample.forEach(t => {
-        const c = cvssColor(t.cvss_score || 0);
-        const r = t.severity === 'Critical' ? 8 : t.severity === 'High' ? 7 : 5;
+    Object.entries(cityGroups).forEach(([city, count]) => {
+        const coords = CITY_COORDS[city];
+        const critPct = (cityCritCount[city] || 0) / count;
+        const ratio = count / maxCount;
 
-        const icon = L.divIcon({
-            className: '',
-            html: `<div style="
-                width:${r * 2}px;height:${r * 2}px;border-radius:50%;
-                background:${c};opacity:0.85;
-                box-shadow:0 0 ${r + 3}px ${c},0 0 ${r * 2 + 4}px ${c}44;
-                border:1px solid ${c}99"></div>`,
-            iconSize: [r * 2, r * 2],
-            iconAnchor: [r, r],
+        // Colour: red if mostly critical, orange if mostly high, else blue
+        const col = critPct > 0.5 ? '#ff3d5a'
+            : cityMaxCvss[city] >= 7 ? '#ff9800'
+                : '#2979ff';
+
+        // Bubble size: 18–52px based on relative count
+        const r = Math.round(18 + ratio * 34);
+
+        // Pulse ring
+        L.marker(coords, {
+            icon: L.divIcon({
+                className: '',
+                html: `<div style="
+                    width:${r}px;height:${r}px;border-radius:50%;
+                    border:2px solid ${col};
+                    background:${col}22;
+                    box-sizing:border-box;
+                    animation:auPulse 2.5s ease-in-out infinite"></div>`,
+                iconSize: [r, r], iconAnchor: [r / 2, r / 2],
+            }),
+            interactive: false,
+            zIndexOffset: -10,
+        }).addTo(mLayer);
+
+        // Solid centre dot
+        const dot = L.circleMarker(coords, {
+            radius: Math.round(6 + ratio * 12),
+            fillColor: col, color: col,
+            weight: 1.5, opacity: 0.9, fillOpacity: 0.7,
         });
 
-        const m = L.marker([t.lat, t.lng], { icon });
-        m.bindPopup(`
-            <div style="font-family:monospace;font-size:10px;background:#070b1c;color:#c7d4ff;
-                        padding:10px;border-radius:6px;min-width:210px;line-height:1.8;
-                        border:1px solid #1a2d45">
-                <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                    <b style="color:${c};font-size:11px">${t.severity}</b>
-                    <b style="color:${c}">CVSS ${(t.cvss_score || 0).toFixed(1)}</b>
+        dot.on('click', () => {
+            map.flyTo(coords, 7, { animate: true, duration: 0.8 });
+        });
+
+        dot.bindPopup(`
+            <div style="font-family:monospace;font-size:10px;background:#070b1c;
+                color:#c7d4ff;padding:10px;border-radius:6px;min-width:190px;
+                line-height:1.8;border:1px solid #1a2d45">
+                <div style="font-size:12px;font-weight:700;color:${col};margin-bottom:4px">
+                    📍 ${city}
                 </div>
-                <div style="color:#7fc4ff;margin-bottom:3px;word-break:break-all">
-                    ${(t.ioc || '').substring(0, 44)}${(t.ioc || '').length > 44 ? '…' : ''}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:9.5px">
+                    <span style="color:#3a5878">Total Threats</span>
+                    <span style="color:#fff;font-weight:700">${count.toLocaleString()}</span>
+                    <span style="color:#3a5878">Critical</span>
+                    <span style="color:#ff3d5a;font-weight:700">${(cityCritCount[city] || 0).toLocaleString()}</span>
+                    <span style="color:#3a5878">Max CVSS</span>
+                    <span style="color:#ffd740;font-weight:700">${(cityMaxCvss[city] || 0).toFixed(1)}</span>
+                    <span style="color:#3a5878">% Critical</span>
+                    <span style="color:#ff9800;font-weight:700">${(critPct * 100).toFixed(0)}%</span>
                 </div>
-                <div style="color:#4a9080">${t.category || '—'}</div>
-                <div style="margin-top:4px;padding-top:4px;border-top:1px solid #1a2d45;
-                    display:grid;grid-template-columns:1fr 1fr;gap:2px;font-size:9.5px">
-                    <span>⚔ ${t.mitre_technique || '—'}</span>
-                    <span>🏛 ${t.nist_function || '—'}</span>
-                    <span>🛡 ${(t.asd_e8 || '—').split('·')[0].trim()}</span>
-                    <span>📍 ${t.city || 'AU'}</span>
-                </div>
-                <div style="margin-top:4px;font-size:9px;color:#304860">${t.source || '—'}</div>
-            </div>`, { className: 'dark-popup', maxWidth: 260 });
+            </div>`, { className: 'dark-popup', maxWidth: 220 });
 
-        mLayer.addLayer(m);
-        n++;
-    });
+        dot.addTo(mLayer);
 
-    // Add city pulse rings for cities with many threats
-    Object.entries(cityGroups).forEach(([city, group]) => {
-        const coords = CITY_COORDS[city];
-        if (!coords || group.length < 50) return;
-
-        const size = Math.min(20 + Math.floor(group.length / 100) * 4, 42);
-        const critCount = group.filter(t => t.severity === 'Critical').length;
-        const col = critCount > group.length * 0.5 ? '#ff4545' : '#ff8c00';
-
-        L.marker([coords.lat, coords.lng], {
+        // City label + count
+        L.marker([coords[0] - 0.8, coords[1]], {
             icon: L.divIcon({
                 className: '',
-                html: `<div style="
-                    width:${size}px;height:${size}px;border-radius:50%;
-                    border:2px solid ${col};
-                    background:${col}18;
-                    animation:pulse 2s ease-in-out infinite;
-                    box-sizing:border-box"></div>`,
-                iconSize: [size, size],
-                iconAnchor: [size / 2, size / 2],
-            }),
-            interactive: false,
-            zIndexOffset: -100,
-        }).addTo(mLayer);
-
-        // City label with count
-        L.marker([coords.lat, coords.lng - 0.5], {
-            icon: L.divIcon({
-                className: '',
-                html: `<div style="
-                    font-family:monospace;font-size:9px;font-weight:700;
-                    color:${col};white-space:nowrap;
-                    text-shadow:0 0 4px #000">
-                    ${city} <span style="color:#fff">${group.length.toLocaleString()}</span>
+                html: `<div style="font-family:monospace;font-size:9.5px;font-weight:700;
+                    color:${col};white-space:nowrap;text-shadow:0 1px 3px #000">
+                    ${city} <span style="color:#fff">${count.toLocaleString()}</span>
                 </div>`,
-                iconSize: [120, 14],
-                iconAnchor: [60, -10],
+                iconSize: [140, 14], iconAnchor: [70, -4],
             }),
             interactive: false,
         }).addTo(mLayer);
     });
 
+    // Update count label — show ALL threats
     const el = document.getElementById('mapCount');
-    if (el) el.textContent = `${n.toLocaleString()} threats plotted across Australia`;
+    if (el) el.textContent =
+        `${totalMapped.toLocaleString()} of ${(threats || []).length.toLocaleString()} threats mapped`;
 
-    // Fit map to AU bounds on first render
     map.fitBounds(AU_BOUNDS, { padding: [10, 10] });
 }
 
-// ── Pulse animation ───────────────────────────────────────────
-(function addPulseStyle() {
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes pulse {
-            0%,100% { opacity:0.8; transform:scale(1); }
-            50% { opacity:0.3; transform:scale(1.15); }
+// Pulse animation
+(function () {
+    const s = document.createElement('style');
+    s.textContent = `
+        @keyframes auPulse {
+            0%,100% { opacity:.7; transform:scale(1); }
+            50%      { opacity:.2; transform:scale(1.2); }
         }
         .dark-popup .leaflet-popup-content-wrapper {
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
+            background:transparent!important;border:none!important;
+            box-shadow:none!important;padding:0!important;
         }
-        .dark-popup .leaflet-popup-content { margin: 0 !important; }
-        .dark-popup .leaflet-popup-tip { background: #1a2d45 !important; }
+        .dark-popup .leaflet-popup-content { margin:0!important; }
+        .dark-popup .leaflet-popup-tip { background:#1a2d45!important; }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(s);
 })();
 
-// ── Init ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', initMap);

@@ -263,6 +263,7 @@ window.applyFeedFilters = function () {
     const nistF = document.getElementById('nistFilter')?.value || '';
     const srcF = document.getElementById('srcFilter')?.value || '';
     const malwareF = document.getElementById('malwareFilter')?.value || '';
+    const mitreF = document.getElementById('mitreFilter')?.value || '';
 
     // Always filter from the date-filtered base
     const base = window.FILTERED || window.ALL;
@@ -284,6 +285,7 @@ window.applyFeedFilters = function () {
         if (nistF && t.nist_function !== nistF) return false;
         if (srcF && t.source !== srcF) return false;
         if (malwareF && t.malware_type !== malwareF) return false;
+        if (mitreF && t.mitre_technique !== mitreF) return false;
         return true;
     });
 
@@ -297,10 +299,10 @@ window.applyFeedFilters = function () {
             : `Showing ${result.length.toLocaleString()} of ${window.ALL.length.toLocaleString()} threats`;
 
     // Show active filter badges
-    renderActiveBadges(search, sevF, catF, typeF, cityF, nistF, srcF, malwareF);
+    renderActiveBadges(search, sevF, catF, typeF, cityF, nistF, srcF, malwareF, mitreF);
 };
 
-function renderActiveBadges(search, sev, cat, type, city, nist, src, mal) {
+function renderActiveBadges(search, sev, cat, type, city, nist, src, mal, mitre) {
     const el = document.getElementById('activeFilterBadges');
     if (!el) return;
     const active = [];
@@ -335,7 +337,7 @@ function setSevPill(sev) {
 window.clearFeedFilters = function () {
     document.getElementById('feedSearch').value = '';
     setSevPill('');
-    ['catFilter', 'typeFilter', 'cityFilter', 'srcFilter', 'nistFilter', 'malwareFilter']
+    ['catFilter', 'typeFilter', 'cityFilter', 'srcFilter', 'nistFilter', 'malwareFilter', 'mitreFilter']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     // Clear quick-category pills
     document.querySelectorAll('.fquick-pill').forEach(p => p.classList.remove('active'));
@@ -493,6 +495,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchEl) {
         searchEl.addEventListener('input', () => {
             clearTimeout(searchTimer);
+            // Show live count immediately without full re-render
+            const q = searchEl.value.toLowerCase().trim();
+            if (q.length > 0) {
+                const base = window.FILTERED || window.ALL;
+                const n = base.filter(t => [
+                    t.ioc, t.category, t.type, t.source,
+                    t.city, t.mitre_technique, t.severity
+                ].some(v => (v || '').toLowerCase().includes(q))).length;
+                const el = document.getElementById('filterCount');
+                if (el) el.textContent = `${n.toLocaleString()} threats match`;
+            }
             searchTimer = setTimeout(window.applyFeedFilters, 400);
             const clr = document.getElementById('feedSearchClear');
             if (clr) clr.style.display = searchEl.value ? 'block' : 'none';
@@ -533,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ── Advanced dropdowns — highlight when active ──
-    ['catFilter', 'typeFilter', 'cityFilter', 'srcFilter', 'nistFilter', 'malwareFilter']
+    ['catFilter', 'typeFilter', 'cityFilter', 'srcFilter', 'nistFilter', 'malwareFilter', 'mitreFilter']
         .forEach(id => {
             document.getElementById(id)?.addEventListener('change', function () {
                 this.classList.toggle('active-filter', this.value !== '');

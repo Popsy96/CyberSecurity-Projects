@@ -53,20 +53,30 @@ function renderOverview(threats) {
         .sort((a, b) => b.val - a.val);
 
     mkChart('ovCatChart', 'bar',
-        catData.map(x => x.label),
+        catData.map(x => x.label.replace(' Distribution', '').replace(' Attack', '')),
         [{
             label: 'Threats',
             data: catData.map(x => x.val),
             backgroundColor: ['#ff3d5a', '#ff9800', '#ffd740', '#00e5a0',
                 '#2979ff', '#9c6bff', '#00d4ff', '#fd7e14', '#e91e63'],
-            borderWidth: 0, borderRadius: 4,
+            borderWidth: 0, borderRadius: 3,
+            barThickness: 13,
         }],
-        { indexAxis: 'y' }
+        {
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: i => ` ${i.raw.toLocaleString()} threats` } }
+            },
+            scales: {
+                x: { grid: { color: '#0a1628' }, beginAtZero: true, ticks: { font: { size: 9 }, maxTicksLimit: 5 } },
+                y: { grid: { display: false }, ticks: { font: { size: 9.5 } } },
+            }
+        }
     );
 
     renderMap(threats);
     renderFeedStatusGraph();
-    renderSevBars(threats);
     renderAdditionalCats(s);
 }
 
@@ -180,54 +190,105 @@ function renderTimeline() {
     const tl = window.STATS.timeline || [];
     if (!tl.length) return;
 
-    // Always start from 13 April 2026 as per project start date
     const START_DATE = '2026-04-13';
     const withData = tl.filter(r => r.count > 0);
     if (!withData.length) return;
     const lastDate = withData[withData.length - 1].date;
     const filtered = tl.filter(r => r.date >= START_DATE && r.date <= lastDate);
 
-    const labels = filtered.map(r => r.date);
+    const labels = filtered.map(r => r.date.slice(5)); // MM-DD only — cleaner
     const values = filtered.map(r => r.count);
+    const max = Math.max(...values, 1);
+
+    // Canvas gradient — tall enough to show fill properly
+    const tlCanvas = document.getElementById('timelineChart');
+    let gradient = null;
+    if (tlCanvas) {
+        const ctx2 = tlCanvas.getContext('2d');
+        const h = tlCanvas.parentElement?.offsetHeight || 100;
+        gradient = ctx2.createLinearGradient(0, 0, 0, h);
+        gradient.addColorStop(0, 'rgba(41,121,255,0.45)');
+        gradient.addColorStop(0.55, 'rgba(41,121,255,0.10)');
+        gradient.addColorStop(1, 'rgba(41,121,255,0.00)');
+    }
 
     mkChart('timelineChart', 'line', labels,
         [{
             label: 'IOC Detections',
             data: values,
-            borderColor: '#0066ff',
-            backgroundColor: 'rgba(0,102,255,.1)',
+            borderColor: '#2979ff',
+            backgroundColor: gradient || 'rgba(41,121,255,0.15)',
             fill: true,
-            tension: .4,
-            pointRadius: (ctx) => ctx.raw > 0 ? 4 : 2,
-            pointBackgroundColor: (ctx) => ctx.raw > 0 ? '#0066ff' : '#112240',
+            tension: 0.4,
+            pointRadius: values.map(v =>
+                v > max * 0.6 ? 5 : v > max * 0.25 ? 3 : v > 0 ? 2 : 0),
+            pointBackgroundColor: values.map(v =>
+                v > max * 0.6 ? '#ff3d5a' : v > max * 0.25 ? '#ff9800' : '#2979ff'),
             pointBorderColor: '#fff',
-            pointBorderWidth: 1.5,
+            pointBorderWidth: 1,
+            borderWidth: 2,
         }],
         {
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => ` ${ctx.parsed.y.toLocaleString()} threats`
+                        title: items => `2026-${items[0].label}`,
+                        label: ctx => ` ${ctx.parsed.y.toLocaleString()} threats`,
                     }
                 }
             },
             scales: {
                 x: {
-                    ticks: {
-                        maxTicksLimit: 15,
-                        color: '#7a9fc0',
-                        font: { size: 9 }
-                    },
+                    ticks: { maxTicksLimit: 10, color: '#7a9fc0', font: { size: 9 } },
                     grid: { color: '#0a1628' }
                 },
                 y: {
-                    ticks: { color: '#7a9fc0', font: { size: 9 } },
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#7a9fc0', font: { size: 9 },
+                        callback: v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v
+                    },
                     grid: { color: '#0a1628' }
                 }
             }
         }
     );
+}
+
+// ── TOP 5 THREAT CITIES (compact) ────────────────────────────
+function renderFeedSourcePills(threats) {
+    const el = document.getElementById('topCitiesList');
+    if (!el) return;
+    const counts = {}, crits = {};
+    (threats || []).forEach(t => {
+        const city = t.city;
+        if (!city || city === 'AU' || city === 'Unknown') return;
+        counts[city] = (counts[city] || 0) + 1;
+        if (t.severity === 'Critical') crits[city] = (crits[city] || 0) + 1;
+    });
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const maxCount = sorted[0]?.[1] || 1;
+    const MEDALS = ['🥇', '🥈', '🥉', '④', '⑤'];
+    el.innerHTML = sorted.map(([city, count], i) => {
+        const crit = crits[city] || 0;
+        const bar = Math.round(count / maxCount * 100);
+        const col = i === 0 ? '#ff3d5a' : i === 1 ? '#ff9800' : '#2979ff';
+        return `
+        <div style="padding:5px 10px;border-bottom:1px solid #0a1628">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+                <span style="font-size:10px">${MEDALS[i]}</span>
+                <span style="font-size:11px;font-weight:600;color:#cde0ff;flex:1">${city}</span>
+                <span style="font-family:monospace;font-size:10px;color:${col};font-weight:700">${count.toLocaleString()}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+                <div style="flex:1;height:3px;background:#0a1628;border-radius:2px;overflow:hidden">
+                    <div style="width:${bar}%;height:100%;background:${col};border-radius:2px"></div>
+                </div>
+                <span style="font-size:9px;color:#ff3d5a;min-width:48px;text-align:right">🔴 ${crit.toLocaleString()}</span>
+            </div>
+        </div>`;
+    }).join('');
 }
 
 // ── FETCH RUNS ────────────────────────────────────────────────
@@ -267,17 +328,21 @@ function renderAnalytics(threats) {
     const malTypeCounts = useStats ? (window.STATS.malware_type_counts || s.malware_type_counts) : s.malware_type_counts;
     const asdCounts = useStats ? (window.STATS.asd_e8_counts || s.asd_e8_counts) : s.asd_e8_counts;
 
-    // NIST cards
+    // NIST cards with % of total
     const nd = s.nist_dist;
-    const set = (id, v) => {
+    const nistTotal = (nd.Identify || 0) + (nd.Protect || 0) + (nd.Detect || 0) + (nd.Respond || 0) + (nd.Recover || 0) || 1;
+    const setNist = (id, v) => {
         const el = document.getElementById(id);
-        if (el) el.textContent = (v || 0).toLocaleString();
+        if (!el) return;
+        const pct = Math.round(v / nistTotal * 100);
+        el.innerHTML = `${(v || 0).toLocaleString()}<span style="font-size:9px;
+            color:var(--text3);font-weight:400;margin-left:4px">${pct}%</span>`;
     };
-    set('nistId', nd.Identify || 0);
-    set('nistPr', nd.Protect || 0);
-    set('nistDe', nd.Detect || 0);
-    set('nistRe', nd.Respond || 0);
-    set('nistRc', nd.Recover || 0);
+    setNist('nistId', nd.Identify || 0);
+    setNist('nistPr', nd.Protect || 0);
+    setNist('nistDe', nd.Detect || 0);
+    setNist('nistRe', nd.Respond || 0);
+    setNist('nistRc', nd.Recover || 0);
 
     // Cities — sorted, exclude AU/Unknown
     const topCities = Object.entries(cityCounts)
@@ -513,6 +578,32 @@ function renderRisk(threats) {
     // Risk Matrix — draws after chart so canvas is sized
     setTimeout(() => drawRiskMatrix(threats), 80);
 
+    // Top 5 highest CVSS — city + category only (no IOC)
+    const top5Body = document.getElementById('top5CvssBody');
+    if (top5Body) {
+        const top5 = [...threats]
+            .filter(t => t.cvss_score > 0)
+            .sort((a, b) => b.cvss_score - a.cvss_score)
+            .slice(0, 5);
+        const NIST_COL = {
+            Identify: '#00e5a0', Protect: '#6ba3ff',
+            Detect: '#ff9800', Respond: '#ff4545', Recover: '#9c6bff'
+        };
+        top5Body.innerHTML = top5.map((t, i) => {
+            const sev = t.severity || 'Low';
+            const sevCls = { Critical: 'bc', High: 'bh', Medium: 'bm', Low: 'bl' }[sev] || 'bl';
+            return `<tr>
+                <td style="color:#3a5878;font-weight:600">${i + 1}</td>
+                <td style="font-family:monospace;font-weight:800;color:${cvssColor(t.cvss_score)}">${t.cvss_score.toFixed(1)}</td>
+                <td><span class="bdg ${sevCls}">${sev.slice(0, 4)}</span></td>
+                <td style="font-size:10.5px;color:#cde0ff">${(t.category || '—').replace(' Distribution', '').replace(' Attack', '')}</td>
+                <td><span class="bdg bmt" style="font-size:9.5px">${t.mitre_technique || '—'}</span></td>
+                <td style="font-size:10.5px;color:#7a9cc8">${t.city || '—'}</td>
+                <td style="font-size:10px;color:#4a6080">${(t.source || '—').replace('AlienVault ', '').replace(' Tracker', '')}</td>
+            </tr>`;
+        }).join('');
+    }
+
     // CVSS breakdown bars
     const dtotal = Math.max(Object.values(dist).reduce((a, b) => a + b, 0), 1);
     const cvssEl = document.getElementById('cvssDist');
@@ -563,8 +654,8 @@ function drawRiskMatrix(threats) {
 
     const ctx = canvas.getContext('2d');
     const wrap = canvas.parentElement;
-    const W = (wrap ? wrap.offsetWidth : canvas.offsetWidth) || 560;
-    const H = 250;
+    const W = (wrap ? wrap.offsetWidth : canvas.offsetWidth) || 480;
+    const H = 200;
     canvas.width = W;
     canvas.height = H;
 
@@ -680,52 +771,5 @@ function drawRiskMatrix(threats) {
 
     // Legend
     const lel = document.getElementById('riskMatrixLbl');
-    if (lel) lel.textContent = `${threats.length.toLocaleString()} threats plotted`;
-
-    // Risk Register sidebar
-    renderRiskRegister(threats);
-}
-
-function renderRiskRegister(threats) {
-    const el = document.getElementById('riskRegister');
-    if (!el) return;
-
-    const REGISTER = [
-        { id: 'R1', risk: 'Phishing', l: 5, i: 4, treatment: 'Restrict Office Macros · MFA', residual: 'Medium' },
-        { id: 'R2', risk: 'C2 Server', l: 4, i: 5, treatment: 'Application Control', residual: 'Medium' },
-        { id: 'R3', risk: 'Malware Distrib.', l: 5, i: 3, treatment: 'Patch Applications', residual: 'Medium' },
-        { id: 'R4', risk: 'Brute Force', l: 4, i: 4, treatment: 'Multi-Factor Authentication', residual: 'Medium' },
-        { id: 'R5', risk: 'Ransomware', l: 3, i: 5, treatment: 'Regular Backups · App Control', residual: 'Medium' },
-        { id: 'R6', risk: 'SQL Injection', l: 3, i: 4, treatment: 'Patch Applications', residual: 'Medium' },
-        { id: 'R7', risk: 'DDoS', l: 3, i: 4, treatment: 'Network / ISP Mitigation', residual: 'Medium' },
-        { id: 'R8', risk: 'Port Scanning', l: 5, i: 2, treatment: 'Accept with Monitoring', residual: 'Medium' },
-    ];
-
-    const ratingColor = score =>
-        score >= 20 ? '#ff3d5a' : score >= 12 ? '#ff9800' : score >= 6 ? '#ffd740' : '#00e5a0';
-    const ratingLabel = score =>
-        score >= 20 ? 'Critical' : score >= 12 ? 'High' : score >= 6 ? 'Medium' : 'Low';
-
-    el.innerHTML = `
-        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;
-            font-weight:700;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)">
-            Risk Register — ISO 27005
-        </div>` +
-        REGISTER.map(r => {
-            const score = r.l * r.i;
-            const col = ratingColor(score);
-            const lbl = ratingLabel(score);
-            return `
-        <div style="display:flex;align-items:center;gap:7px;padding:5px 0;
-            border-bottom:1px solid #0a1628;font-size:10.5px">
-            <span style="color:var(--text3);min-width:22px;font-family:monospace;font-size:9.5px">${r.id}</span>
-            <span style="flex:1;color:var(--text);font-weight:500">${r.risk}</span>
-            <span style="font-family:monospace;font-weight:800;color:${col};min-width:18px;text-align:center">${score}</span>
-            <span style="font-size:9px;font-weight:700;color:${col};min-width:44px;text-align:right">${lbl}</span>
-        </div>`;
-        }).join('') + `
-        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-            ${[['Critical', '#ff3d5a', '20-25'], ['High', '#ff9800', '12-19'], ['Medium', '#ffd740', '6-11'], ['Low', '#00e5a0', '1-5']]
-            .map(([l, c, r]) => `<span style="font-size:9px;color:${c};font-weight:600">■ ${l} (${r})</span>`).join('')}
-        </div>`;
+    if (lel) lel.textContent = `${threats.length.toLocaleString()} threats · bubble size = live volume`;
 }
