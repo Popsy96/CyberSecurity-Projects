@@ -1,0 +1,13 @@
+config.py
+abuseipdb_cache.json
+data.json
+threats.db
+normalised.sh
+otx.sh
+.vscode/
+__pycache__/
+*.pyc
+*.db
+.venv/
+*.sh
+*.json
