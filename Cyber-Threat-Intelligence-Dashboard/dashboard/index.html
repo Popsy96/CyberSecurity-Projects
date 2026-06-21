@@ -44,6 +44,30 @@
             </div>
         </div>
 
+        <!-- ══ MOBILE BOTTOM NAV — shown only under 900px ════ -->
+        <div class="mobile-nav">
+            <div class="mnav-link active" onclick="showTab('overview',this)">
+                <span class="mnav-ic">⬡</span>
+                <span class="mnav-label">Overview</span>
+            </div>
+            <div class="mnav-link" onclick="showTab('feed',this)">
+                <span class="mnav-ic">⬢</span>
+                <span class="mnav-label">Feed</span>
+            </div>
+            <div class="mnav-link" onclick="showTab('analytics',this)">
+                <span class="mnav-ic">⬣</span>
+                <span class="mnav-label">Analytics</span>
+            </div>
+            <div class="mnav-link" onclick="showTab('risk',this)">
+                <span class="mnav-ic">⬤</span>
+                <span class="mnav-label">Risk</span>
+            </div>
+            <div class="mnav-link" onclick="showTab('ir',this)">
+                <span class="mnav-ic">⬥</span>
+                <span class="mnav-label">IR</span>
+            </div>
+        </div>
+
         <div class="body">
 
             <!-- ══ SIDEBAR — VSCode style ════════════════════════ -->
@@ -669,10 +693,22 @@
     <script>
         function showTab(name, el) {
             document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            // Clear active state on BOTH nav sets — desktop sidebar (.nav-link)
+            // and mobile bottom bar (.mnav-link) — since only one is visible
+            // at a time depending on viewport width, but both must stay in
+            // sync with whichever tab is actually showing.
+            document.querySelectorAll('.nav-link, .mnav-link').forEach(n => n.classList.remove('active'));
+
             const p = document.getElementById('tab-' + name);
             if (p) p.classList.add('active');
-            if (el) el.classList.add('active');
+
+            // Activate the matching link in BOTH nav sets by tab name,
+            // not just the one element that was clicked — so switching
+            // tabs from the sidebar also updates the mobile bar (and
+            // vice versa) even though only one is visible right now.
+            document.querySelectorAll(`.nav-link[onclick*="'${name}'"], .mnav-link[onclick*="'${name}'"]`)
+                .forEach(n => n.classList.add('active'));
+
             // Invalidate map size when switching to overview
             if (name === 'overview' && window.map) {
                 setTimeout(() => window.map.invalidateSize(), 100);
