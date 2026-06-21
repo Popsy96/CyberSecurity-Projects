@@ -781,11 +781,18 @@ body {
 }
 
 .leaflet-container {
-    background: #010508 !important;
+    background: #0a1018 !important;
 }
 
+/* CARTO dark_all tiles are already very dark by design — confirmed via
+   DevTools tile preview showing correct coastline/label rendering at
+   200 OK. The previous saturate(.75) brightness(.95) filter was still
+   darkening an already-dark tile, pushing it below visible contrast
+   against the dashboard's own dark UI chrome at this widget's small
+   height. Boosting brightness here instead, so the landmass and state
+   borders are clearly distinguishable from the black ocean/background. */
 .leaflet-tile {
-    filter: brightness(.12) saturate(.2) hue-rotate(195deg);
+    filter: brightness(1.6) contrast(1.15);
 }
 
 /* ── BAR ── */
