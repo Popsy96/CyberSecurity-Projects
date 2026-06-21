@@ -35,8 +35,14 @@ function initMap() {
         attributionControl: false,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18, opacity: 0.28,
+    // CARTO dark basemap — designed for dark dashboards, so it stays
+    // legible at high opacity (unlike the default OSM bright style,
+    // which becomes nearly invisible when dimmed enough to match a
+    // dark theme — that's why the coastline disappeared previously).
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 18,
+        opacity: 0.85,
+        subdomains: 'abcd',
     }).addTo(map);
 
     // State labels
