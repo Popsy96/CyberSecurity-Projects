@@ -781,11 +781,18 @@ body {
 }
 
 .leaflet-container {
-    background: #010508 !important;
+    background: #0a1018 !important;
 }
 
+/* Previously: filter: brightness(.12) saturate(.2) hue-rotate(195deg);
+   That crushed every tile to 12% brightness regardless of tile
+   provider or opacity set in map.js — this was the actual reason
+   the map looked empty even after switching to a dark tile provider.
+   Now using CARTO's dark_all tiles (already dark by design) with a
+   much lighter filter just to desaturate slightly and match the
+   dashboard's blue-grey palette, without erasing visibility. */
 .leaflet-tile {
-    filter: brightness(.12) saturate(.2) hue-rotate(195deg);
+    filter: saturate(.75) brightness(.95);
 }
 
 /* ── BAR ── */
