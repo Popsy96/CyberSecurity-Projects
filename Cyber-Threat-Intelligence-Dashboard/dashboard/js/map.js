@@ -41,7 +41,7 @@ function initMap() {
     // dark theme — that's why the coastline disappeared previously).
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 18,
-        opacity: 0.85,
+        opacity: 1.0,
         subdomains: 'abcd',
     }).addTo(map);
 
