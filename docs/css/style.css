@@ -1514,13 +1514,83 @@ table.dataTable tbody td {
     }
 }
 
+/* ══════════════════════════════════════════════
+   MOBILE BOTTOM NAV — replaces sidebar under 900px
+══════════════════════════════════════════════ */
+
+/* Hidden on desktop by default */
+.mobile-nav {
+    display: none;
+}
+
 @media (max-width: 900px) {
     :root {
         --sidebar-w: 0px;
     }
 
+    /* Hide the desktop VSCode-style sidebar entirely on mobile —
+       it relies on :hover to expand, which doesn't exist on touch
+       devices, so it would otherwise be stuck permanently collapsed
+       and effectively unusable (this was the original bug: all 5
+       tabs disappeared on mobile because the sidebar was display:none
+       with nothing replacing it). */
     .sidebar {
         display: none;
+    }
+
+    /* Fixed bottom tab bar — standard mobile nav pattern */
+    .mobile-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 58px;
+        background: #0d1117;
+        border-top: 1px solid var(--border);
+        z-index: 500;
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        /* iOS notch/home-bar safe area */
+    }
+
+    .mnav-link {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        color: var(--text3);
+        cursor: pointer;
+        user-select: none;
+        transition: color .15s;
+        padding-top: 2px;
+    }
+
+    .mnav-link.active {
+        color: var(--accent);
+    }
+
+    .mnav-ic {
+        font-size: 17px;
+        line-height: 1;
+    }
+
+    .mnav-label {
+        font-size: 8.5px;
+        font-weight: 600;
+        letter-spacing: .2px;
+        line-height: 1;
+    }
+
+    /* Leave room at the bottom of the page so content/cards aren't
+       hidden underneath the fixed bottom nav bar */
+    .body {
+        padding-bottom: 58px;
+    }
+
+    .content {
+        padding-bottom: calc(58px + env(safe-area-inset-bottom, 0));
     }
 
     .r3 {
@@ -1539,6 +1609,16 @@ table.dataTable tbody td {
 
     .fw-pills {
         display: none;
+    }
+
+    /* On very narrow phones, shrink the bottom nav text/icons slightly
+       so all 5 tabs still fit without wrapping or overflowing */
+    .mnav-ic {
+        font-size: 15px;
+    }
+
+    .mnav-label {
+        font-size: 7.5px;
     }
 }
 
