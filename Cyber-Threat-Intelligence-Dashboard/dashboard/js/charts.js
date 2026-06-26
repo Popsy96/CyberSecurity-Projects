@@ -186,18 +186,40 @@ function renderFeedStatusGraph() {
 }
 
 // ── TIMELINE ─────────────────────────────────────────────────
-function renderTimeline() {
-    const tl = window.STATS.timeline || [];
-    if (!tl.length) return;
+function renderTimeline(threats) {
+    // Build day-by-day counts from the ACTUAL filtered threats array,
+    // not the static window.STATS.timeline backend aggregate, which is
+    // always computed over the full project period regardless of which
+    // date-filter button is active. Without this, clicking "Last 7 Days"
+    // or "Last 30 Days" updated every other chart on Overview except
+    // this one — it stayed frozen showing the full project timeline.
+    const data = threats || window.FILTERED || window.ALL || [];
+    if (!data.length) return;
 
-    const START_DATE = '2026-04-13';
-    const withData = tl.filter(r => r.count > 0);
-    if (!withData.length) return;
-    const lastDate = withData[withData.length - 1].date;
-    const filtered = tl.filter(r => r.date >= START_DATE && r.date <= lastDate);
+    const counts = {}; // date string 'YYYY-MM-DD' -> count
+    data.forEach(t => {
+        const dt = parseThreatDate(t);
+        if (!dt || isNaN(dt)) return;
+        const key = dt.toISOString().slice(0, 10);
+        counts[key] = (counts[key] || 0) + 1;
+    });
 
-    const labels = filtered.map(r => r.date.slice(5)); // MM-DD only — cleaner
-    const values = filtered.map(r => r.count);
+    const dates = Object.keys(counts).sort();
+    if (!dates.length) return;
+
+    // Always include the full span between earliest and latest date in
+    // view, filling in zero-count days, so the line doesn't visually
+    // skip gaps when a filtered range has sparse days.
+    const start = new Date(dates[0]);
+    const end = new Date(dates[dates.length - 1]);
+    const labels = [];
+    const values = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const key = d.toISOString().slice(0, 10);
+        labels.push(key.slice(5)); // MM-DD only — cleaner
+        values.push(counts[key] || 0);
+    }
+
     const max = Math.max(...values, 1);
 
     // Canvas gradient — tall enough to show fill properly
@@ -210,6 +232,16 @@ function renderTimeline() {
         gradient.addColorStop(0, 'rgba(41,121,255,0.45)');
         gradient.addColorStop(0.55, 'rgba(41,121,255,0.10)');
         gradient.addColorStop(1, 'rgba(41,121,255,0.00)');
+    }
+
+    // Update the chart's caption to reflect the current date range,
+    // since it's no longer always "from 13 Apr 2026" once filtered.
+    const captionEl = document.querySelector('#timelineChart')
+        ?.closest('.card')?.querySelector('.cs');
+    if (captionEl) {
+        const sameYear = start.getFullYear() === end.getFullYear();
+        const fmt = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: sameYear ? undefined : 'numeric' });
+        captionEl.textContent = `— ${fmt(start)} to ${fmt(end)}`;
     }
 
     mkChart('timelineChart', 'line', labels,
@@ -233,7 +265,10 @@ function renderTimeline() {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        title: items => `2026-${items[0].label}`,
+                        title: items => {
+                            const yr = start.getFullYear();
+                            return `${yr}-${items[0].label}`;
+                        },
                         label: ctx => ` ${ctx.parsed.y.toLocaleString()} threats`,
                     }
                 }
