@@ -354,6 +354,7 @@ function updateAllTabs() {
     // Always use FILTERED — it equals ALL when no filter is active
     const t = window.FILTERED || window.ALL;
     renderOverview(t);
+    renderTimeline(t);
     renderTable(t);
     renderAnalytics(t);
     renderRisk(t);
@@ -424,7 +425,7 @@ function loadData() {
                     renderOverview(window.ALL);
                     renderSidebarFeeds();
                     renderFetchRuns();
-                    renderTimeline();
+                    renderTimeline(window.ALL);
 
                     // Defer heavier renders slightly so UI stays responsive
                     setTimeout(() => {
